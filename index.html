@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7×7 Rune Puzzle</title>
+  <style>
+    :root {
+      /* 셀 크기와 간격을 고정치로 둬서 어떤 화면에서도 보드가 안정적으로 보이도록 */
+      --cell: 60px; /* 정사각형 한 변 */
+      --gap : 6px;  /* 셀 간격 */
+    }/* === 레이아웃 === */
+html, body { margin: 0; height: 100%; }
+body {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  gap: 20px;
+  font-family: sans-serif;
+}
+
+/* === 보드 === */
+#board {
+  display: grid;
+  grid-template-columns: repeat(7, var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: var(--gap);
+}
+.cell {
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 0; /* 완전 뾰족 */
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(255,255,255,0.15);
+  transition: filter 0.1s;
+}
+.cell:hover { filter: brightness(1.2); }
+
+/* 색상 클래스 */
+.c0 { background:#ff0033; } /* 빨강 */
+.c1 { background:#ffd800; } /* 노랑 */
+.c2 { background:#00ff33; } /* 초록 */
+.c3 { background:#0066ff; } /* 파랑 */
+
+/* === 클릭 카운트 인디케이터 === */
+#dots { display: flex; gap: 8px; }
+.dot {
+  width: 14px; height: 14px;
+  background:#fff;
+  border-radius: 50%;
+}
+
+/* === 버튼 === */
+button {
+  padding: 6px 14px;
+  border:none;
+  border-radius:4px;
+  background:#444;
+  color:#fff;
+  cursor:pointer;
+}
+button:hover { background:#666; }
+
+  </style>
+</head>
+<body>
+  <div id="dots"></div>
+  <div id="board"></div>
+  <button id="resetBtn">RESET</button>  <script>
+    /* ---------------- 데이터 구조 ---------------- */
+    const SIZE = 7;
+    const board = Array.from({length: SIZE}, () => Array(SIZE).fill(0)); // 0:R,1:Y,2:G,3:B
+
+    // 사용자 해답 순서(가로 x, 아래 y, 1-index) => 0-index (row,col)
+    // (6,2)->(3,4)->(7,7)->(2,5)->(5,3)
+    const solutionClicks = [
+      [5,5], // (row 5, col 5)
+      [3,2], // (3,2)
+      [0,6], // (0,6)
+      [2,1], // (2,1)
+      [4,4]  // (4,4)
+    ];
+
+    // 반경 매핑 (C0=0~3)
+    const radiusByColor = [4,1,2,3]; // 빨 4, 노 1, 초 2, 파 3   (역연산용)
+
+    /* ---------------- 퍼즐 생성 : 진짜 역연산 ---------------- */
+    function inverseClick(row,col){
+      const C0 = board[row][col];
+      const r   = radiusByColor[C0];
+
+      // 클릭 칸 -1 (mod4)
+      board[row][col] = (board[row][col]+3)%4;
+
+      // 주변 칸 -1 (C0의 반경 기준)
+      for(let i=0;i<SIZE;i++){
+        for(let j=0;j<SIZE;j++){
+          if(i===row && j===col) continue;
+          if(Math.abs(i-row)+Math.abs(j-col) <= r){
+            board[i][j] = (board[i][j]+3)%4;
+          }
+        }
+      }
+    }
+
+    // 초기 보드 : 전부 0(R) → solutionClicks 역순으로 inverseClick
+    [...solutionClicks].reverse().forEach(([r,c])=>inverseClick(r,c));
+
+    /* ---------------- DOM 구축 ---------------- */
+    const boardEl = document.getElementById('board');
+    const dotsEl  = document.getElementById('dots');
+    const resetBtn= document.getElementById('resetBtn');
+
+    function buildDots(){
+      dotsEl.innerHTML='';
+      for(let i=0;i<5;i++){
+        const d=document.createElement('div');
+        d.className='dot';
+        dotsEl.appendChild(d);
+      }
+    }
+
+    function buildBoard(){
+      boardEl.innerHTML='';
+      for(let r=0;r<SIZE;r++){
+        for(let c=0;c<SIZE;c++){
+          const cell=document.createElement('div');
+          cell.className='cell c'+board[r][c];
+          cell.dataset.row=r;
+          cell.dataset.col=c;
+          cell.addEventListener('click',handleClick);
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    /* ---------------- 게임 로직 ---------------- */
+    let clicks=0;
+
+    function handleClick(e){
+      const row=+e.target.dataset.row;
+      const col=+e.target.dataset.col;
+      forwardClick(row,col);
+      clicks++;
+      updateDots();
+      renderBoard();
+      if(isSolved()) alert('Solved!');
+    }
+
+    function forwardClick(row,col){
+      const C0 = board[row][col];
+      const r   = [1,2,3,4][C0]; // 정방향 반경: R1 Y2 G3 B4
+
+      // 클릭 칸 +1
+      board[row][col]=(board[row][col]+1)%4;
+
+      // 주변 +1 (C0 반경)
+      for(let i=0;i<SIZE;i++){
+        for(let j=0;j<SIZE;j++){
+          if(i===row && j===col) continue;
+          if(Math.abs(i-row)+Math.abs(j-col) <= r){
+            board[i][j]=(board[i][j]+1)%4;
+          }
+        }
+      }
+    }
+
+    function isSolved(){
+      const first=board[0][0];
+      return board.flat().every(v=>v===first);
+    }
+
+    function renderBoard(){
+      document.querySelectorAll('.cell').forEach(cell=>{
+        const r=+cell.dataset.row, c=+cell.dataset.col;
+        cell.className='cell c'+board[r][c];
+      });
+    }
+
+    function updateDots(){
+      const dots=[...dotsEl.children];
+      if(clicks<=5 && dots[5-clicks]) dots[5-clicks].style.visibility='hidden';
+    }
+
+    /* ---------------- 리셋 ---------------- */
+    function resetGame(){
+      // 보드 초기화
+      for(let r=0;r<SIZE;r++) board[r].fill(0);
+      // 역연산 다시 적용해 원래 퍼즐로 복구
+      [...solutionClicks].reverse().forEach(([r,c])=>inverseClick(r,c));
+      clicks=0;
+      buildDots();
+      renderBoard();
+    }
+
+    resetBtn.addEventListener('click',resetGame);
+
+    /* ---------------- 초기 실행 ---------------- */
+    buildDots();
+    buildBoard();
+  </script></body>
+</html>
