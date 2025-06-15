@@ -12,6 +12,10 @@
 
 /* 메뉴 */
 .rules{font-size:0.95rem;text-align:center;line-height:1.4;opacity:0.9}
+.legend-block{display:grid;grid-template-columns:repeat(7,10px);grid-auto-rows:10px;gap:1px}
+.legend-block>.square{width:10px;height:10px}
+.legend-title{text-align:center;font-size:0.8rem;margin-top:4px;opacity:0.8}
+.rules{font-size:0.95rem;text-align:center;line-height:1.4;opacity:0.9}
 #menu h1{font-size:2.6rem;margin:0}
 .level-container{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
 .level-btn{min-width:140px;height:70px;font-size:1.2rem;border:none;border-radius:8px;cursor:pointer;background:#222;color:#fff}
@@ -42,19 +46,21 @@
     <h1>난이도 선택</h1>
     <div class="rules">
       <strong>규칙</strong> : 셀을 클릭하면<br>
-      — 해당 칸이 <em>빨→노→초→파→빨</em> 순으로 바뀌며,<br>
-      — 동시에 <em>맨해튼 거리(가로거리 + 세로 거리)</em> ≤ 색마다 지정된 반경의 주변 칸도 같은 방식으로 변합니다.<br>
-      &nbsp;&nbsp;• 빨강 1&nbsp;&nbsp;• 노랑 2&nbsp;&nbsp;• 초록 3&nbsp;&nbsp;• 파랑 4<br>
+      — 해당 칸이 <em>빨 → 노 → 초 → 파 → 빨</em> 순으로 바뀌고,<br>
+      — 동시에 <em>맨해튼 거리</em> ≤ 색마다 지정된 반경의 주변 칸도 같은 방식으로 변합니다.<br>
+      &nbsp;&nbsp;• 빨강 1&nbsp;&nbsp;• 노랑 2&nbsp;&nbsp;• 초록 3&nbsp;&nbsp;• 파랑 4<br>
       남은 클릭 수는 위 점(dot)으로 표시되며,<br>
       모든 칸 색이 같아지면 퍼즐이 해결됩니다.
-    </div>
-    <div class="level-container">
-      <button id="veryEasyBtn" class="level-btn">매우쉬움</button>
-      <button id="normalBtn"    class="level-btn">보통</button>
-      <button id="hardBtn"      class="level-btn">상</button>
-      <button id="extremeBtn"   class="level-btn">극상</button>
-      <button id="infiniteBtn"  class="level-btn">무한</button>
-    </div>
+    </div><!-- 색별 반경 시각 예시 -->
+<div id="legend" style="display:flex;gap:24px;"></div>
+<div class="level-container">
+  <button id="veryEasyBtn" class="level-btn">매우쉬움</button>
+  <button id="normalBtn"    class="level-btn">보통</button>
+  <button id="hardBtn"      class="level-btn">상</button>
+  <button id="extremeBtn"   class="level-btn">극상</button>
+  <button id="infiniteBtn"  class="level-btn">무한</button>
+</div>
+
   </div>  <!-- ===== 게임 화면 ===== -->  <div id="game" class="view">
     <button id="homeBtn">HOME</button>
     <div id="dots"></div>
