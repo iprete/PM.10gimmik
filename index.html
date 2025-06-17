@@ -24,112 +24,53 @@
     .c0{background:#ff0033}.c1{background:#ffd800}.c2{background:#00ff33}.c3{background:#0066ff}
     #dots{display:flex;gap:8px}
     .dot{width:14px;height:14px;background:#fff;border-radius:50%}
-    /* 메뉴 스크롤 방지 문제 해결 */
     #menu{max-height:100vh;overflow-y:auto}
   </style>
 </head>
 <body>
-  <!-- 메뉴 -->
   <div id="menu" class="view active">
     <h1>난이도 선택</h1>
-    <div class="rules">
-      <strong>규칙</strong> : 클릭 칸은 <em>빨→노→초→파→빨</em> 순으로 변하며,<br>
+            <div class="rules">
+      <strong>규칙</strong> : 클릭한 칸은 <em>빨→노→초→파→빨</em> 순으로 변하며,<br>
       맨해튼 거리 ≤ 색별 반경(빨1·노2·초3·파4)인 주변 칸도 함께 변합니다.<br>
-      남은 클릭 수는 점(dot)으로 표시, 모든 칸 색이 같아지면 성공!
+      남은 클릭 수는 점(dot)으로 표시됩니다.
     </div>
     <div id="legend"></div>
     <div id="levels"></div>
-  </div>  <!-- 게임 -->  <div id="game" class="view">
+  </div>
+  <div id="game" class="view">
     <button id="homeBtn">HOME</button>
     <div id="dots"></div>
     <div id="board"></div>
     <button id="resetBtn">RESET</button>
-  </div><script>
-/***** 퍼즐 정의 *****/
+  </div>
+<script>
 const puzzles={
   veryeasy:{size:7,max:2,sol:[[6,0],[0,6]]},
   normal  :{size:5,max:3,sol:[[1,1],[4,4],[0,2]]},
   hard    :{size:5,max:5,sol:[[2,1],[3,0],[0,4],[4,3],[1,2]]},
   extreme :{size:7,max:5,sol:[[5,5],[3,2],[0,6],[2,1],[4,4]]},
+  impossible:{size:9,max:7,sol:[[8,0],[6,2],[4,4],[2,6],[0,8],[5,5],[3,3]]},
   infinite:{size:7,max:0,sol:[],inf:true}
 };
-const order=['veryeasy','normal','hard','extreme','infinite'];
-const names={veryeasy:'매우쉬움',normal:'보통',hard:'상',extreme:'극상',infinite:'무한'};
-
-/***** DOM *****/
-const menu=document.getElementById('menu');
-const game=document.getElementById('game');
-const legend=document.getElementById('legend');
-const levels=document.getElementById('levels');
-const homeBtn=document.getElementById('homeBtn');
-const resetBtn=document.getElementById('resetBtn');
-const dotsEl=document.getElementById('dots');
-const boardEl=document.getElementById('board');
-
-/***** 상태 *****/
+const order=['veryeasy','normal','hard','extreme','impossible','infinite'];
+const names={veryeasy:'매우쉬움',normal:'보통',hard:'상',extreme:'극상',impossible:'불가능',infinite:'무한'};
+const menu=document.getElementById('menu'),game=document.getElementById('game'),legend=document.getElementById('legend'),levels=document.getElementById('levels'),homeBtn=document.getElementById('homeBtn'),resetBtn=document.getElementById('resetBtn'),dotsEl=document.getElementById('dots'),boardEl=document.getElementById('board');
 let cur='veryeasy',SIZE,MAX,sol,board,clicks;
-
-/***** 레전드 9×9, 반경 4·1·2·3 *****/
-(function(){
-  const colors=['#ff0033','#ffd800','#00ff33','#0066ff'];
-  const radii = [1,2,3,4];
-  const N=9,center=4;
-  for(let i=0;i<4;i++){
-    const wrap=document.createElement('div');wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';
-    const grid=document.createElement('div');grid.className='legend-block';
-    for(let y=0;y<N;y++)for(let x=0;x<N;x++){
-      const sq=document.createElement('div');sq.className='square';
-      if(Math.abs(x-center)+Math.abs(y-center)<=radii[i])sq.style.background=colors[i];
-      grid.appendChild(sq);
-    }
-    const cap=document.createElement('div');cap.className='legend-title';cap.textContent=['빨1','노2','초3','파4'][i];
-    wrap.append(grid,cap);legend.appendChild(wrap);
-  }
-})();
-
-/***** 난이도 버튼 *****/
-function buildLevels(){
-  levels.innerHTML='';
-  order.forEach(k=>{
-    const b=document.createElement('button');b.textContent=names[k];b.className='level-btn';
-    b.onclick=()=>{cur=k;showGame();};levels.appendChild(b);
-  });
-}
-
-/***** 화면 전환 *****/
+(function(){const colors=['#ff0033','#ffd800','#00ff33','#0066ff'],radii=[1,2,3,4],N=9,center=4;for(let i=0;i<4;i++){const wrap=document.createElement('div');wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';const grid=document.createElement('div');grid.className='legend-block';for(let y=0;y<N;y++)for(let x=0;x<N;x++){const sq=document.createElement('div');sq.className='square';if(Math.abs(x-center)+Math.abs(y-center)<=radii[i])sq.style.background=colors[i];grid.appendChild(sq);}const cap=document.createElement('div');cap.className='legend-title';cap.textContent=['빨4','노1','초2','파3'][i];wrap.append(grid,cap);legend.appendChild(wrap);} })();
+function buildLevels(){levels.innerHTML='';order.forEach(k=>{const b=document.createElement('button');b.textContent=names[k];b.className='level-btn';b.onclick=()=>{cur=k;showGame();};levels.appendChild(b);});}
 function showMenu(){menu.classList.add('active');game.classList.remove('active');}
 function showGame(){init(puzzles[cur]);menu.classList.remove('active');game.classList.add('active');}
-
-/***** 퍼즐 초기화 *****/
-function init(cfg){
-  SIZE=cfg.size;MAX=cfg.max;sol=cfg.sol;clicks=0;
-  board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
-  if(cfg.inf){board.forEach(r=>r.fill(3));}
-  else{
-    const rad=[4,1,2,3];
-    const inv=(r,c)=>{const col=board[r][c],rv=rad[col];board[r][c]=(col+3)%4;for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE;j++)if(Math.abs(i-r)+Math.abs(j-c)<=rv&&(i!==r||j!==c))board[i][j]=(board[i][j]+3)%4;};
-    [...sol].reverse().forEach(([r,c])=>inv(r,c));
-  }
-  buildDots();buildBoard();
-}
-
-/***** UI 빌드 *****/
-function buildDots(){dotsEl.innerHTML='';if(MAX<1){dotsEl.style.display='none';return;}dotsEl.style.display='flex';for(let i=0;i<MAX;i++){dotsEl.appendChild(Object.assign(document.createElement('div'),{className:'dot'}));}}
+function init(cfg){SIZE=cfg.size;MAX=cfg.max;sol=cfg.sol;clicks=0;board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));if(cfg.inf){board.forEach(r=>r.fill(3));}else{const rad=[4,1,2,3];const inv=(r,c)=>{const col=board[r][c],rv=rad[col];board[r][c]=(col+3)%4;for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE;j++)if(Math.abs(i-r)+Math.abs(j-c)<=rv&&(i!==r||j!==c))board[i][j]=(board[i][j]+3)%4;};[...sol].reverse().forEach(([r,c])=>inv(r,c));}buildDots();buildBoard();}
+function buildDots(){dotsEl.innerHTML='';if(MAX<1){dotsEl.style.display='none';return;}dotsEl.style.display='flex';for(let i=0;i<MAX;i++){const d=document.createElement('div');d.className='dot';dotsEl.appendChild(d);}}
 function buildBoard(){boardEl.innerHTML='';boardEl.style.gridTemplateColumns=`repeat(${SIZE},60px)`;boardEl.style.gridAutoRows='60px';for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){const cell=document.createElement('div');cell.className='cell c'+board[r][c];cell.dataset.r=r;cell.dataset.c=c;cell.onclick=clickCell;boardEl.appendChild(cell);}render();}
-
-/***** 게임 로직 *****/
 function clickCell(e){if(MAX>0&&clicks>=MAX)return;const r=+e.target.dataset.r,c=+e.target.dataset.c;advance(r,c);clicks++;updateDots();render();if(MAX>0&&!puzzles[cur].inf&&solved())setTimeout(()=>alert('Solved!'),10);}
 function advance(r,c){const col=board[r][c],rv=[1,2,3,4][col];board[r][c]=(col+1)%4;for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE;j++)if(Math.abs(i-r)+Math.abs(j-c)<=rv&&(i!==r||j!==c))board[i][j]=(board[i][j]+1)%4;}
 function updateDots(){if(MAX<1)return;if(dotsEl.children[MAX-clicks])dotsEl.children[MAX-clicks].style.visibility='hidden';}
 function render(){boardEl.querySelectorAll('.cell').forEach(cell=>{const r=+cell.dataset.r,c=+cell.dataset.c;cell.className='cell c'+board[r][c];});}
 function solved(){return board.flat().every(v=>v===board[0][0]);}
-
-/***** 이벤트 *****/
-resetBtn.onclick=()=>init(puzzles[cur]);
-homeBtn.onclick=showMenu;
-
-/***** 초기 *****/
-buildLevels();
-showMenu();
-</script></body>
+resetBtn.onclick=()=>init(puzzles[cur]);homeBtn.onclick=showMenu;
+buildLevels();showMenu();
+</script>
+</body>
 </html>
