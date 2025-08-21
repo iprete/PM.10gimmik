@@ -1,3 +1,49 @@
+<!DOCTYPE html><html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rune Puzzle</title>
+  <style>
+    html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;font-family:sans-serif}
+    .view{display:none;flex-direction:column;align-items:center;gap:24px}
+    .active{display:flex}
+    h1{margin:0;font-size:2.4rem}
+    .rules{font-size:.9rem;text-align:center;line-height:1.4;opacity:.9}
+    .level-btn{min-width:130px;height:60px;margin:4px;border:none;border-radius:6px;background:#222;color:#fff;font-size:1.05rem;cursor:pointer}
+    .level-btn:hover,#homeBtn:hover,#resetBtn:hover{background:#555}
+    #legend{display:flex;gap:18px;margin-top:10px}
+    .legend-block{display:grid;grid-template-columns:repeat(9,10px);grid-auto-rows:10px;gap:1px}
+    .square{width:10px;height:10px;background:#333}
+    .legend-title{font-size:.75rem;opacity:.8;margin-top:3px;text-align:center}
+    #game{gap:20px;position:relative}
+    #homeBtn{position:absolute;top:-44px;left:0;padding:6px 12px;border:none;border-radius:6px;background:#444;color:#fff;cursor:pointer}
+    #resetBtn{padding:6px 14px;border:none;border-radius:6px;background:#444;color:#fff;cursor:pointer}
+    #board{display:grid;gap:6px}
+    .cell{width:60px;height:60px;box-shadow:0 0 4px rgba(255,255,255,.15);transition:filter .1s}
+    .cell:hover{filter:brightness(1.25)}
+    .c0{background:#ff0033}.c1{background:#ffd800}.c2{background:#00ff33}.c3{background:#0066ff}
+    #dots{display:flex;gap:8px}
+    .dot{width:14px;height:14px;background:#fff;border-radius:50%}
+    #menu{max-height:100vh;overflow-y:auto}
+  </style>
+</head>
+<body>
+  <div id="menu" class="view active">
+    <h1>난이도 선택</h1>
+            <div class="rules">
+      <strong>규칙</strong> : 클릭한 칸은 <em>빨→노→초→파→빨</em> 순으로 변하며,<br>
+      맨해튼 거리 ≤ 색별 반경(빨1·노2·초3·파4)인 주변 칸도 함께 변합니다.<br>
+      남은 클릭 수는 점(dot)으로 표시됩니다.
+    </div>
+    <div id="legend"></div>
+    <div id="levels"></div>
+  </div>
+  <div id="game" class="view">
+    <button id="homeBtn">HOME</button>
+    <div id="dots"></div>
+    <div id="board"></div>
+    <button id="resetBtn">RESET</button>
+  </div>
 <script>
 const puzzles={
   veryeasy:{size:7,max:2,sol:[[6,0],[0,6]]},
@@ -12,8 +58,6 @@ const names={veryeasy:'매우쉬움',normal:'보통',hard:'상',extreme:'극상'
 const menu=document.getElementById('menu'),game=document.getElementById('game'),legend=document.getElementById('legend'),levels=document.getElementById('levels'),homeBtn=document.getElementById('homeBtn'),resetBtn=document.getElementById('resetBtn'),dotsEl=document.getElementById('dots'),boardEl=document.getElementById('board');
 let cur='veryeasy',SIZE,MAX,sol,board,clicks;
 
-// 여기에 오디오 객체를 추가합니다.
-// 'SOUND.mp3'는 HTML 파일과 같은 경로에 있다고 가정합니다.
 const solveSound = new Audio('SOUND.mp3');
 
 (function(){const colors=['#ff0033','#ffd800','#00ff33','#0066ff'],radii=[1,2,3,4],N=9,center=4;for(let i=0;i<4;i++){const wrap=document.createElement('div');wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';const grid=document.createElement('div');grid.className='legend-block';for(let y=0;y<N;y++)for(let x=0;x<N;x++){const sq=document.createElement('div');sq.className='square';if(Math.abs(x-center)+Math.abs(y-center)<=radii[i])sq.style.background=colors[i];grid.appendChild(sq);}const cap=document.createElement('div');cap.className='legend-title';cap.textContent=['빨4','노1','초2','파3'][i];wrap.append(grid,cap);legend.appendChild(wrap);} })();
